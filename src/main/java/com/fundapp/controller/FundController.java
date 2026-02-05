@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.fundapp.dto.AddMemberRequest;
 import com.fundapp.dto.CreateFundRequest;
 import com.fundapp.entity.Fund;
 import com.fundapp.entity.FundMember;
@@ -53,6 +54,36 @@ public class FundController {
         fundMemberRepository.save(member);
 
         return savedFund;
+
+    }
+
+    @PostMapping("/add-member")
+    public String addMember(@RequestBody AddMemberRequest request) {
+        Fund fund = fundRepository.findById(request.getFundId())
+                .orElseThrow(() -> new RuntimeException("Fund not found"));
+
+        User user = userRepository.findByPhone(request.getPhone());
+        if (user == null) {
+            return "User not registered";
+        }
+        boolean alreadyMember = fundMemberRepository.existsByFund_IdAndUser_Id(fund.getId(), user.getId());
+
+        if (alreadyMember) {
+            return "User already a member of this fund";
+        }
+
+        FundMember member = new FundMember();
+        member.setFund(fund);
+        member.setUser(user);
+        member.setRole("MEMBER");
+        member.setJoinDate(LocalDate.now());
+
+        fundMemberRepository.save(member);
+
+        fund.setTotalMembers(fund.getTotalMembers() + 1);
+        fundRepository.save(fund);
+
+        return "Member added succeessfully";
 
     }
 
