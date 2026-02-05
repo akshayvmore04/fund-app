@@ -1,8 +1,11 @@
 package com.fundapp.controller;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -10,6 +13,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.fundapp.dto.AddMemberRequest;
 import com.fundapp.dto.CreateFundRequest;
+import com.fundapp.dto.FundDetailsResponse;
+import com.fundapp.dto.MemberResponse;
 import com.fundapp.entity.Fund;
 import com.fundapp.entity.FundMember;
 import com.fundapp.entity.User;
@@ -87,4 +92,24 @@ public class FundController {
 
     }
 
+    @GetMapping("/{fundId}")
+    public FundDetailsResponse getFundDetails(@PathVariable Long fundId) {
+        Fund fund = fundRepository.findById(fundId).orElseThrow(() -> new RuntimeException("Fund not found"));
+
+        List<FundMember> fundMembers = fundMemberRepository.findByFund_Id(fundId);
+
+        List<MemberResponse> members = fundMembers.stream().map(
+                m -> new MemberResponse(m.getUser().getName(), m.getUser().getPhone(), m.getRole(), m.getJoinDate()))
+                .toList();
+
+        return new FundDetailsResponse(fund.getId(),
+                fund.getName(),
+                fund.getMonthlyAmount(),
+                fund.getStatus(),
+                fund.getStartDate(),
+                fund.getTotalMembers(),
+                fund.getAdmin().getName(),
+                fund.getAdmin().getPhone(),
+                members);
+    }
 }
