@@ -20,7 +20,7 @@ public class AuthController {
     private UserRepository userRepository;
 
     @PostMapping("/register")
-    public User register(@RequestBody User user) { 
+    public User register(@RequestBody User user) {
         System.out.println("NAME = " + user.getName());
         System.out.println("PHONE = " + user.getPhone());
         System.out.println("PASSWORD = " + user.getPassword());
@@ -31,6 +31,7 @@ public class AuthController {
 
     @PostMapping("/login")
     public String login(@RequestBody LoginRequest request) {
+
         User user = userRepository.findByPhone(request.getPhone());
 
         if (user == null) {

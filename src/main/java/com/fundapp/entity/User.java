@@ -1,8 +1,13 @@
 package com.fundapp.entity;
-
 import java.time.LocalDateTime;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Id;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "users")
@@ -11,12 +16,18 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     private String name;
     private String phone;
     private String password;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
-    
+
+    // REQUIRED: No-arg constructor
+    public User() {}
+
+    // Getters & Setters
     public Long getId() {
         return id;
     }
@@ -56,6 +67,4 @@ public class User {
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
-
-
 }

@@ -16,4 +16,8 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
     boolean existsByFundIdAndUserIdAndMonth(Long fundId, Long userId, String month);
 
+    List<Payment> findByFundIdAndStatus(Long fundId, String status);
+
+    List<Payment> findByFundIdAndMonthAndStatus(Long fundId, String month, String status);
+
 }

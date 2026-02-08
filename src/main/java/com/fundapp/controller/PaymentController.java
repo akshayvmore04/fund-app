@@ -1,15 +1,20 @@
 package com.fundapp.controller;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fundapp.dto.ApprovePaymentRequest;
+import com.fundapp.dto.DefaulterResponse;
 import com.fundapp.dto.PaymentRequest;
+import com.fundapp.dto.PendingPaymentResponse;
 import com.fundapp.entity.Fund;
 import com.fundapp.entity.Payment;
 import com.fundapp.entity.User;
@@ -87,22 +92,49 @@ public class PaymentController {
         return "Payment approved successfully";
     }
 
+    @GetMapping("/pending/{fundId}")
+    public List<PendingPaymentResponse> getPendingPayments(@PathVariable Long fundId) {
+        List<Payment> payments = paymentRepository.findByFundIdAndStatus(fundId, "PENDING");
+        return payments.stream().map(p -> new PendingPaymentResponse(
+                p.getId(),
+                p.getUser().getName(),
+                p.getUser().getPhone(),
+                p.getMonth(),
+                p.getAmount())).toList();
+    }
+
+    @GetMapping("/defaulters/{fundId}/{month}")
+    public List<DefaulterResponse> getDefaulters(@PathVariable Long fundId, @PathVariable String month) {
+        // all users
+        var members = fundMemberRepository.findByFund_Id(fundId);
+        // users done with payment
+        var paidPayments = paymentRepository.findByFundIdAndMonthAndStatus(fundId, month, "PAID");
+
+        // extract users done with payment
+        var paidUserIds = paidPayments.stream().map(p -> p.getUser().getId()).toList();
+
+        // filter defaulters
+        return members.stream().filter(m -> !paidUserIds.contains(m.getUser().getId()))
+                .map(m -> new DefaulterResponse(m.getUser().getName(), m.getUser().getPhone())).toList();
+
+    }
+
     // OLD FLOW - direct pay (not used anymore)
     /*
      * @PostMapping("/pay")
      * public String pay(@RequestBody PaymentRequest request) {
      * 
-     * // 1️⃣ Find fund
+     * // Find fund
      * Fund fund = fundRepository.findById(request.getFundId())
      * .orElseThrow(() -> new RuntimeException("Fund not found"));
      * 
-     * // 2️⃣ Find user
+     * // Find user
      * User user = userRepository.findByPhone(request.getPhone());
      * if (user == null) {
      * return "User not found";
      * }
      * 
-     * // 3️⃣ Check membership
+     * // Check membership
      * boolean isMember =
      * fundMemberRepository.existsByFund_IdAndUser_Id(fund.getId(), user.getId());
      * 
@@ -110,7 +142,7 @@ public class PaymentController {
      * return "User is not a member of this fund";
      * }
      * 
-     * // 4️⃣ Prevent duplicate
+     * // Prevent duplicate
      * boolean alreadyPaid = paymentRepository
      * .existsByFundIdAndUserIdAndMonth(
      * fund.getId(),
@@ -122,7 +154,7 @@ public class PaymentController {
      * return "Payment already done for this month";
      * }
      * 
-     * // 5️⃣ Save payment
+     * // Save payment
      * Payment payment = new Payment();
      * payment.setFund(fund);
      * payment.setUser(user);
