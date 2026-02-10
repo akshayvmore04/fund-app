@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.fundapp.dto.ApprovePaymentRequest;
 import com.fundapp.dto.DefaulterResponse;
+import com.fundapp.dto.PaymentHistoryResponse;
 import com.fundapp.dto.PaymentRequest;
 import com.fundapp.dto.PendingPaymentResponse;
 import com.fundapp.entity.Fund;
@@ -117,6 +118,14 @@ public class PaymentController {
         return members.stream().filter(m -> !paidUserIds.contains(m.getUser().getId()))
                 .map(m -> new DefaulterResponse(m.getUser().getName(), m.getUser().getPhone())).toList();
 
+    }
+
+    @GetMapping("/history/{fundId}")
+    public List<PaymentHistoryResponse> getPaymentHistory(@PathVariable Long fundId) {
+        List<Payment> payments = paymentRepository.findByFundId(fundId);
+
+        return payments.stream().map(p -> new PaymentHistoryResponse(p.getUser().getName(), p.getUser().getPhone(),
+                p.getMonth(), p.getAmount(), p.getStatus(), p.getPaymentDate())).toList();
     }
 
     // OLD FLOW - direct pay (not used anymore)
