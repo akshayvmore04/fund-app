@@ -1,5 +1,6 @@
 package com.fundapp.controller;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.fundapp.dto.ApprovePaymentRequest;
 import com.fundapp.dto.DefaulterResponse;
+import com.fundapp.dto.FundDashboardResponse;
 import com.fundapp.dto.PaymentHistoryResponse;
 import com.fundapp.dto.PaymentRequest;
 import com.fundapp.dto.PendingPaymentResponse;
@@ -128,6 +130,26 @@ public class PaymentController {
                 p.getMonth(), p.getAmount(), p.getStatus(), p.getPaymentDate())).toList();
     }
 
+    @GetMapping("/dashboard/{fundId}/{month}")
+    public FundDashboardResponse getDashboard(@PathVariable Long fundId, @PathVariable String month) {
+
+        Fund fund = fundRepository.findById(fundId).orElseThrow(() -> new RuntimeException("Fund not found"));
+
+        int totalMembers = fund.getTotalMembers();
+        BigDecimal monthlyAmount = fund.getMonthlyAmount();
+
+        BigDecimal expected = monthlyAmount.multiply(java.math.BigDecimal.valueOf(totalMembers));
+        List<Payment> payments = paymentRepository.findByFundIdAndMonth(fundId, month);
+
+        BigDecimal collected = payments.stream()
+                .filter(p -> "PAID".equals(p.getStatus()))
+                .map(p -> p.getAmount())
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal pending = expected.subtract(collected);
+
+        return new FundDashboardResponse(totalMembers, monthlyAmount, expected, collected, pending);
+    }
     // OLD FLOW - direct pay (not used anymore)
     /*
      * @PostMapping("/pay")
