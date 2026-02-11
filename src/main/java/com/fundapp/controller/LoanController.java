@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -63,7 +64,6 @@ public class LoanController {
 
         BigDecimal emi = totalPayable.divide(BigDecimal.valueOf(request.getMonths()), 2, BigDecimal.ROUND_HALF_UP);
 
-
         String month = LocalDate.now().format(DateTimeFormatter.ofPattern("MMM-yyyy")).toUpperCase();
         Loan loan = new Loan();
         loan.setFund(fund);
@@ -87,8 +87,8 @@ public class LoanController {
     public String requestEmi(@RequestBody EmiRequestDto request) {
         Loan loan = loanRepository.findById(request.getLoanId())
                 .orElseThrow(() -> new RuntimeException("Loan not found"));
-       
-                // System.out.println("Loan EMI = " + loan.getMonthlyEmi());
+
+        // System.out.println("Loan EMI = " + loan.getMonthlyEmi());
 
         if (!loan.getStatus().equals("ACTIVE")) {
             return "Loan is not active";
@@ -104,10 +104,40 @@ public class LoanController {
         emi.setAmount(loan.getMonthlyEmi());
         emi.setStatus("PENDING");
         emi.setRequestDate(java.time.LocalDate.now());
-       
 
         loanEmiRepository.save(emi);
 
         return "EMI request submitted";
+    }
+
+    @PostMapping("/emi/approve/{emiId}")
+    public String approveEmi(@PathVariable Long emiId) {
+
+        LoanEmi emi = loanEmiRepository.findById(emiId).orElseThrow(() -> new RuntimeException("EMI not found"));
+        if ("PAID".equals(emi.getStatus())) {
+            return "EMI already approved";
+        }
+        if (emi.getAmount() == null) {
+            return "EMI amount missing";
+        }
+        // makrkin emi paid
+        emi.setStatus("PAID");
+        emi.setApprovedDate(java.time.LocalDate.now());
+        loanEmiRepository.save(emi);
+
+        // reduce remaining amount
+        Loan loan = emi.getLoan();
+        java.math.BigDecimal newRemaining = loan.getRemainingAmount().subtract(emi.getAmount());
+
+        loan.setRemainingAmount(newRemaining);
+
+        // close if finished
+        if (newRemaining.compareTo(java.math.BigDecimal.ZERO) <= 0) {
+            loan.setStatus("CLOSED");
+        }
+
+        loanRepository.save(loan);
+
+        return "EMI approved successfully";
     }
 }
