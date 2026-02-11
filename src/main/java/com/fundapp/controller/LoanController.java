@@ -10,12 +10,15 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.fundapp.dto.EmiRequestDto;
 import com.fundapp.dto.IssueLoanRequest;
 import com.fundapp.entity.Fund;
 import com.fundapp.entity.Loan;
+import com.fundapp.entity.LoanEmi;
 import com.fundapp.entity.User;
 import com.fundapp.repository.FundMemberRepository;
 import com.fundapp.repository.FundRepository;
+import com.fundapp.repository.LoanEmiRepository;
 import com.fundapp.repository.LoanRepository;
 import com.fundapp.repository.UserRepository;
 
@@ -34,6 +37,9 @@ public class LoanController {
 
     @Autowired
     private FundMemberRepository fundMemberRepository;
+
+    @Autowired
+    private LoanEmiRepository loanEmiRepository;
 
     @PostMapping("/issue")
     public String issueLoan(@RequestBody IssueLoanRequest request) {
@@ -57,6 +63,7 @@ public class LoanController {
 
         BigDecimal emi = totalPayable.divide(BigDecimal.valueOf(request.getMonths()), 2, BigDecimal.ROUND_HALF_UP);
 
+
         String month = LocalDate.now().format(DateTimeFormatter.ofPattern("MMM-yyyy")).toUpperCase();
         Loan loan = new Loan();
         loan.setFund(fund);
@@ -74,5 +81,33 @@ public class LoanController {
         loanRepository.save(loan);
 
         return "Loan issued successfully";
+    }
+
+    @PostMapping("/emi/request")
+    public String requestEmi(@RequestBody EmiRequestDto request) {
+        Loan loan = loanRepository.findById(request.getLoanId())
+                .orElseThrow(() -> new RuntimeException("Loan not found"));
+       
+                // System.out.println("Loan EMI = " + loan.getMonthlyEmi());
+
+        if (!loan.getStatus().equals("ACTIVE")) {
+            return "Loan is not active";
+
+        }
+        boolean exists = loanEmiRepository.existsByLoanIdAndMonth(loan.getId(), request.getMonth());
+        if (exists) {
+            return "EMI already requested for this month";
+        }
+        LoanEmi emi = new LoanEmi();
+        emi.setLoan(loan);
+        emi.setMonth(request.getMonth());
+        emi.setAmount(loan.getMonthlyEmi());
+        emi.setStatus("PENDING");
+        emi.setRequestDate(java.time.LocalDate.now());
+       
+
+        loanEmiRepository.save(emi);
+
+        return "EMI request submitted";
     }
 }
