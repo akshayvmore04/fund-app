@@ -19,9 +19,36 @@ public class Loan {
     private Long id;
 
     private BigDecimal loanAmount;
+    private BigDecimal interestPercent;
+    private BigDecimal totalPayable;
+    private int months;
     private BigDecimal remainingAmount;
     private BigDecimal monthlyEmi;
     private String startMonth;
+    public BigDecimal getInterestPercent() {
+        return interestPercent;
+    }
+
+    public void setInterestPercent(BigDecimal interestPercent) {
+        this.interestPercent = interestPercent;
+    }
+
+    public BigDecimal getTotalPayable() {
+        return totalPayable;
+    }
+
+    public void setTotalPayable(BigDecimal totalPayable) {
+        this.totalPayable = totalPayable;
+    }
+
+    public int getMonths() {
+        return months;
+    }
+
+    public void setMonths(int months) {
+        this.months = months;
+    }
+
     private String status;
 
     @ManyToOne
