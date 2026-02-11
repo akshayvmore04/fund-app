@@ -1,6 +1,7 @@
 package com.fundapp.entity;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -25,6 +26,16 @@ public class Loan {
     private BigDecimal remainingAmount;
     private BigDecimal monthlyEmi;
     private String startMonth;
+    private LocalDate createdAt;
+
+    public LocalDate getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDate createdAt) {
+        this.createdAt = createdAt;
+    }
+
     public BigDecimal getInterestPercent() {
         return interestPercent;
     }
