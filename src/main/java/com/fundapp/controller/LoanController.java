@@ -22,6 +22,7 @@ import com.fundapp.repository.FundRepository;
 import com.fundapp.repository.LoanEmiRepository;
 import com.fundapp.repository.LoanRepository;
 import com.fundapp.repository.UserRepository;
+import com.fundapp.service.LoanService;
 
 @RestController
 @RequestMapping("/loan")
@@ -41,6 +42,9 @@ public class LoanController {
 
     @Autowired
     private LoanEmiRepository loanEmiRepository;
+
+    @Autowired
+    private LoanService loanService;
 
     @PostMapping("/issue")
     public String issueLoan(@RequestBody IssueLoanRequest request) {
@@ -111,33 +115,7 @@ public class LoanController {
     }
 
     @PostMapping("/emi/approve/{emiId}")
-    public String approveEmi(@PathVariable Long emiId) {
-
-        LoanEmi emi = loanEmiRepository.findById(emiId).orElseThrow(() -> new RuntimeException("EMI not found"));
-        if ("PAID".equals(emi.getStatus())) {
-            return "EMI already approved";
-        }
-        if (emi.getAmount() == null) {
-            return "EMI amount missing";
-        }
-        // makrkin emi paid
-        emi.setStatus("PAID");
-        emi.setApprovedDate(java.time.LocalDate.now());
-        loanEmiRepository.save(emi);
-
-        // reduce remaining amount
-        Loan loan = emi.getLoan();
-        java.math.BigDecimal newRemaining = loan.getRemainingAmount().subtract(emi.getAmount());
-
-        loan.setRemainingAmount(newRemaining);
-
-        // close if finished
-        if (newRemaining.compareTo(java.math.BigDecimal.ZERO) <= 0) {
-            loan.setStatus("CLOSED");
-        }
-
-        loanRepository.save(loan);
-
-        return "EMI approved successfully";
+    public String approveEmi(@PathVariable("emiId") Long emiId) {
+        return loanService.approveEmi(emiId);
     }
 }
