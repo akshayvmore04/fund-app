@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 
 import com.fundapp.entity.Loan;
 import com.fundapp.entity.LoanEmi;
+import com.fundapp.exception.ResourceNotFoundException;
 import com.fundapp.repository.LoanEmiRepository;
 import com.fundapp.repository.LoanRepository;
 
@@ -18,7 +19,7 @@ public class LoanService {
     private LoanRepository loanRepository;
 
     public String approveEmi(Long emiId) {
-        LoanEmi emi = loanEmiRepository.findById(emiId).orElseThrow(() -> new RuntimeException("EMI not found"));
+        LoanEmi emi = loanEmiRepository.findById(emiId).orElseThrow(() -> new ResourceNotFoundException("EMI not found"));
         if ("PAID".equals(emi.getStatus())) {
             return "EMI already approved";
         }
