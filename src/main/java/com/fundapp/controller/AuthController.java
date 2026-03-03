@@ -3,6 +3,7 @@ package com.fundapp.controller;
 import java.time.LocalDateTime;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,12 +20,15 @@ public class AuthController {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private BCryptPasswordEncoder passwordEncoder;
+
     @PostMapping("/register")
     public User register(@RequestBody User user) {
         System.out.println("NAME = " + user.getName());
         System.out.println("PHONE = " + user.getPhone());
-        System.out.println("PASSWORD = " + user.getPassword());
-
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        user.setRole("MEMBER");
         user.setCreatedAt(LocalDateTime.now());
         return userRepository.save(user);
     }
@@ -32,8 +36,8 @@ public class AuthController {
     @PostMapping("/login")
     public String login(@RequestBody LoginRequest request) {
 
-        User user = userRepository.findByPhone(request.getPhone());
-
+        User user = userRepository.findByPhone(request.getPhone())
+                .orElseThrow(() -> new RuntimeException("User not found"));
         if (user == null) {
             return "User not found";
         }

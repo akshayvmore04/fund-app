@@ -67,7 +67,8 @@ public class FundController {
         Fund fund = fundRepository.findById(request.getFundId())
                 .orElseThrow(() -> new RuntimeException("Fund not found"));
 
-        User user = userRepository.findByPhone(request.getPhone());
+        User user = userRepository.findByPhone(request.getPhone())
+                .orElseThrow(() -> new RuntimeException("User not found"));
         if (user == null) {
             return "User not registered";
         }
