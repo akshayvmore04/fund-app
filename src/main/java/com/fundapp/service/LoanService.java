@@ -3,6 +3,7 @@ package com.fundapp.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.fundapp.dto.ApiResponse;
 import com.fundapp.entity.Loan;
 import com.fundapp.entity.LoanEmi;
 import com.fundapp.exception.ResourceNotFoundException;
@@ -18,14 +19,20 @@ public class LoanService {
     @Autowired
     private LoanRepository loanRepository;
 
-    public String approveEmi(Long emiId) {
+    public ApiResponse<String> approveEmi(Long emiId) {
         LoanEmi emi = loanEmiRepository.findById(emiId).orElseThrow(() -> new ResourceNotFoundException("EMI not found"));
         if ("PAID".equals(emi.getStatus())) {
-            return "EMI already approved";
-        }
+return new ApiResponse<>(
+        false,
+        "EMI already approved",
+        null
+);        }
         if (emi.getAmount() == null) {
-            return "EMI amount missing";
-        }
+return new ApiResponse<>(
+        false,
+        "EMI amount missing",
+        null
+);        }
         // get loan
         Loan loan = emi.getLoan();
 
@@ -46,6 +53,9 @@ public class LoanService {
 
         loanRepository.save(loan);
 
-        return "EMI approved successfully";
-    }
+return new ApiResponse<>(
+        true,
+        "EMI approved successfully",
+        null
+);    }
 }

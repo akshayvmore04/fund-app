@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.fundapp.dto.ApiResponse;
 import com.fundapp.dto.ApprovePaymentRequest;
 import com.fundapp.dto.DefaulterResponse;
 import com.fundapp.dto.FundDashboardResponse;
@@ -33,201 +34,212 @@ import com.fundapp.repository.UserRepository;
 @RequestMapping("/payment")
 public class PaymentController {
 
-    @Autowired
-    private PaymentRepository paymentRepository;
+        @Autowired
+        private PaymentRepository paymentRepository;
 
-    @Autowired
-    private FundRepository fundRepository;
+        @Autowired
+        private FundRepository fundRepository;
 
-    @Autowired
-    private UserRepository userRepository;
+        @Autowired
+        private UserRepository userRepository;
 
-    @Autowired
-    private FundMemberRepository fundMemberRepository;
+        @Autowired
+        private FundMemberRepository fundMemberRepository;
 
-    @PostMapping("/request")
-    public String requestPayment(@RequestBody PaymentRequest request) {
+        @PostMapping("/request")
+        public ApiResponse<String> requestPayment(@RequestBody PaymentRequest request) {
 
-        Fund fund = fundRepository.findById(request.getFundId())
-                .orElseThrow(() -> new RuntimeException("Fund not found"));
+                Fund fund = fundRepository.findById(request.getFundId())
+                                .orElseThrow(() -> new RuntimeException("Fund not found"));
 
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+                Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
-        String phone = auth.getName();
+                String phone = auth.getName();
 
-        User user = userRepository.findByPhone(phone)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                User user = userRepository.findByPhone(phone)
+                                .orElseThrow(() -> new RuntimeException("User not found"));
 
-        boolean isMember = fundMemberRepository
-                .existsByFund_IdAndUser_Id(fund.getId(), user.getId());
+                boolean isMember = fundMemberRepository
+                                .existsByFund_IdAndUser_Id(fund.getId(), user.getId());
 
-        if (!isMember)
-            return "User is not a member of this fund";
+                if (!isMember)
+                        return new ApiResponse<>(
+                                        false,
+                                        "User is not a member of this fund",
+                                        null);
+                boolean alreadyExists = paymentRepository
+                                .existsByFundIdAndUserIdAndMonth(
+                                                fund.getId(),
+                                                user.getId(),
+                                                request.getMonth());
 
-        boolean alreadyExists = paymentRepository
-                .existsByFundIdAndUserIdAndMonth(
-                        fund.getId(),
-                        user.getId(),
-                        request.getMonth());
+                if (alreadyExists)
+                        return new ApiResponse<>(
+                                        false,
+                                        "Payment already requested",
+                                        null);
+                Payment payment = new Payment();
+                payment.setFund(fund);
+                payment.setUser(user);
+                payment.setMonth(request.getMonth());
+                payment.setAmount(fund.getMonthlyAmount());
+                payment.setStatus("PENDING");
 
-        if (alreadyExists)
-            return "Payment request already exists";
+                paymentRepository.save(payment);
 
-        Payment payment = new Payment();
-        payment.setFund(fund);
-        payment.setUser(user);
-        payment.setMonth(request.getMonth());
-        payment.setAmount(fund.getMonthlyAmount());
-        payment.setStatus("PENDING");
-
-        paymentRepository.save(payment);
-
-        return "Payment request submitted for approval";
-    }
-
-    @PostMapping("/approve")
-    public String approvePayment(@RequestBody ApprovePaymentRequest request) {
-        Payment payment = paymentRepository.findById(request.getPaymentId())
-                .orElseThrow(() -> new RuntimeException("Payment not found"));
-        if (!payment.getStatus().equals("PENDING")) {
-            return "Payment aready processed";
+                return new ApiResponse<>(
+                                true,
+                                "Payment request submitted",
+                                null);
         }
 
-        payment.setStatus("PAID");
-        payment.setPaymentDate(LocalDate.now());
+        @PostMapping("/approve")
+        public ApiResponse<String> approvePayment(@RequestBody ApprovePaymentRequest request) {
+                Payment payment = paymentRepository.findById(request.getPaymentId())
+                                .orElseThrow(() -> new RuntimeException("Payment not found"));
+                if (!payment.getStatus().equals("PENDING")) {
+                        return new ApiResponse<>(
+                                        false,
+                                        "Payment already processed",
+                                        null);
+                }
 
-        paymentRepository.save(payment);
+                payment.setStatus("PAID");
+                payment.setPaymentDate(LocalDate.now());
 
-        return "Payment approved successfully";
-    }
+                paymentRepository.save(payment);
 
-    @GetMapping("/pending/{fundId}")
-    public List<PendingPaymentResponse> getPendingPayments(@PathVariable Long fundId) {
-        List<Payment> payments = paymentRepository.findByFundIdAndStatus(fundId, "PENDING");
-        return payments.stream().map(p -> new PendingPaymentResponse(
-                p.getId(),
-                p.getUser().getName(),
-                p.getUser().getPhone(),
-                p.getMonth(),
-                p.getAmount())).toList();
-    }
+                return new ApiResponse<String>(true, "Payment approved successfully", null);
+        }
 
-    @GetMapping("/defaulters/{fundId}/{month}")
-    public List<DefaulterResponse> getDefaulters(@PathVariable Long fundId, @PathVariable String month) {
-        // all users
-        var members = fundMemberRepository.findByFund_Id(fundId);
-        // users done with payment
-        var paidPayments = paymentRepository.findByFundIdAndMonthAndStatus(fundId, month, "PAID");
+        @GetMapping("/pending/{fundId}")
+        public List<PendingPaymentResponse> getPendingPayments(@PathVariable Long fundId) {
+                List<Payment> payments = paymentRepository.findByFundIdAndStatus(fundId, "PENDING");
+                return payments.stream().map(p -> new PendingPaymentResponse(
+                                p.getId(),
+                                p.getUser().getName(),
+                                p.getUser().getPhone(),
+                                p.getMonth(),
+                                p.getAmount())).toList();
+        }
 
-        // extract users done with payment
-        var paidUserIds = paidPayments.stream().map(p -> p.getUser().getId()).toList();
+        @GetMapping("/defaulters/{fundId}/{month}")
+        public List<DefaulterResponse> getDefaulters(@PathVariable Long fundId, @PathVariable String month) {
+                // all users
+                var members = fundMemberRepository.findByFund_Id(fundId);
+                // users done with payment
+                var paidPayments = paymentRepository.findByFundIdAndMonthAndStatus(fundId, month, "PAID");
 
-        // filter defaulters
-        return members.stream().filter(m -> !paidUserIds.contains(m.getUser().getId()))
-                .map(m -> new DefaulterResponse(m.getUser().getName(), m.getUser().getPhone())).toList();
+                // extract users done with payment
+                var paidUserIds = paidPayments.stream().map(p -> p.getUser().getId()).toList();
 
-    }
+                // filter defaulters
+                return members.stream().filter(m -> !paidUserIds.contains(m.getUser().getId()))
+                                .map(m -> new DefaulterResponse(m.getUser().getName(), m.getUser().getPhone()))
+                                .toList();
 
-    @GetMapping("/history/{fundId}")
-    public List<PaymentHistoryResponse> getPaymentHistory(@PathVariable Long fundId) {
-        List<Payment> payments = paymentRepository.findByFundId(fundId);
+        }
 
-        return payments.stream().map(p -> new PaymentHistoryResponse(p.getUser().getName(), p.getUser().getPhone(),
-                p.getMonth(), p.getAmount(), p.getStatus(), p.getPaymentDate())).toList();
-    }
+        @GetMapping("/history/{fundId}")
+        public List<PaymentHistoryResponse> getPaymentHistory(@PathVariable Long fundId) {
+                List<Payment> payments = paymentRepository.findByFundId(fundId);
 
-    @GetMapping("/dashboard/{fundId}/{month}")
-    public FundDashboardResponse getDashboard(@PathVariable Long fundId, @PathVariable String month) {
+                return payments.stream()
+                                .map(p -> new PaymentHistoryResponse(p.getUser().getName(), p.getUser().getPhone(),
+                                                p.getMonth(), p.getAmount(), p.getStatus(), p.getPaymentDate()))
+                                .toList();
+        }
 
-        Fund fund = fundRepository.findById(fundId).orElseThrow(() -> new RuntimeException("Fund not found"));
+        @GetMapping("/dashboard/{fundId}/{month}")
+        public FundDashboardResponse getDashboard(@PathVariable Long fundId, @PathVariable String month) {
 
-        int totalMembers = fund.getTotalMembers();
-        BigDecimal monthlyAmount = fund.getMonthlyAmount();
+                Fund fund = fundRepository.findById(fundId).orElseThrow(() -> new RuntimeException("Fund not found"));
 
-        BigDecimal expected = monthlyAmount.multiply(java.math.BigDecimal.valueOf(totalMembers));
-        List<Payment> payments = paymentRepository.findByFundIdAndMonth(fundId, month);
+                int totalMembers = fund.getTotalMembers();
+                BigDecimal monthlyAmount = fund.getMonthlyAmount();
 
-        BigDecimal collected = payments.stream()
-                .filter(p -> "PAID".equals(p.getStatus()))
-                .map(p -> p.getAmount())
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                BigDecimal expected = monthlyAmount.multiply(java.math.BigDecimal.valueOf(totalMembers));
+                List<Payment> payments = paymentRepository.findByFundIdAndMonth(fundId, month);
 
-        BigDecimal pending = expected.subtract(collected);
+                BigDecimal collected = payments.stream()
+                                .filter(p -> "PAID".equals(p.getStatus()))
+                                .map(p -> p.getAmount())
+                                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        return new FundDashboardResponse(totalMembers, monthlyAmount, expected, collected, pending);
-    }
+                BigDecimal pending = expected.subtract(collected);
 
-  @GetMapping("/my-history")
-public List<PaymentHistoryDto> myPaymentHistory() {
+                return new FundDashboardResponse(totalMembers, monthlyAmount, expected, collected, pending);
+        }
 
-    Authentication auth =
-            SecurityContextHolder.getContext().getAuthentication();
+        @GetMapping("/my-history")
+        public ApiResponse<List<PaymentHistoryDto>> myPaymentHistory() {
 
-    String phone = auth.getName();
+                Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
-    User user = userRepository.findByPhone(phone)
-            .orElseThrow(() -> new RuntimeException("User not found"));
+                String phone = auth.getName();
 
-    List<Payment> payments =
-            paymentRepository.findByUserId(user.getId());
+                User user = userRepository.findByPhone(phone)
+                                .orElseThrow(() -> new RuntimeException("User not found"));
 
-    return payments.stream()
-            .map(payment -> new PaymentHistoryDto(
-                    payment.getMonth(),
-                    payment.getAmount(),
-                    payment.getStatus(),
-                    payment.getPaymentDate()
-            ))
-            .toList();
-}
+                List<Payment> payments = paymentRepository.findByUserId(user.getId());
 
-    // OLD FLOW - direct pay (not used anymore)
-    /*
-     * @PostMapping("/pay")
-     * public String pay(@RequestBody PaymentRequest request) {
-     * 
-     * // Find fund
-     * Fund fund = fundRepository.findById(request.getFundId())
-     * .orElseThrow(() -> new RuntimeException("Fund not found"));
-     * 
-     * // Find user
-     * User user = userRepository.findByPhone(request.getPhone());
-     * if (user == null) {
-     * return "User not found";
-     * }
-     * 
-     * // Check membership
-     * boolean isMember =
-     * fundMemberRepository.existsByFund_IdAndUser_Id(fund.getId(), user.getId());
-     * 
-     * if (!isMember) {
-     * return "User is not a member of this fund";
-     * }
-     * 
-     * // Prevent duplicate
-     * boolean alreadyPaid = paymentRepository
-     * .existsByFundIdAndUserIdAndMonth(
-     * fund.getId(),
-     * user.getId(),
-     * request.getMonth()
-     * );
-     * 
-     * if (alreadyPaid) {
-     * return "Payment already done for this month";
-     * }
-     * 
-     * // Save payment
-     * Payment payment = new Payment();
-     * payment.setFund(fund);
-     * payment.setUser(user);
-     * payment.setMonth(request.getMonth());
-     * payment.setAmount(fund.getMonthlyAmount());
-     * payment.setStatus("PAID");
-     * payment.setPaymentDate(LocalDate.now());
-     * 
-     * paymentRepository.save(payment);
-     * 
-     * return "Payment successful";
-     * }
-     */
+                List<PaymentHistoryDto> response = payments.stream()
+                                .map(payment -> new PaymentHistoryDto(
+                                                payment.getMonth(),
+                                                payment.getAmount(),
+                                                payment.getStatus(),
+                                                payment.getPaymentDate()))
+                                .toList();
+                return new ApiResponse<>(true, "Payment history fetched successfully", response);
+        }
+
+        // OLD FLOW - direct pay (not used anymore)
+        /*
+         * @PostMapping("/pay")
+         * public String pay(@RequestBody PaymentRequest request) {
+         * 
+         * // Find fund
+         * Fund fund = fundRepository.findById(request.getFundId())
+         * .orElseThrow(() -> new RuntimeException("Fund not found"));
+         * 
+         * // Find user
+         * User user = userRepository.findByPhone(request.getPhone());
+         * if (user == null) {
+         * return "User not found";
+         * }
+         * 
+         * // Check membership
+         * boolean isMember =
+         * fundMemberRepository.existsByFund_IdAndUser_Id(fund.getId(), user.getId());
+         * 
+         * if (!isMember) {
+         * return "User is not a member of this fund";
+         * }
+         * 
+         * // Prevent duplicate
+         * boolean alreadyPaid = paymentRepository
+         * .existsByFundIdAndUserIdAndMonth(
+         * fund.getId(),
+         * user.getId(),
+         * request.getMonth()
+         * );
+         * 
+         * if (alreadyPaid) {
+         * return "Payment already done for this month";
+         * }
+         * 
+         * // Save payment
+         * Payment payment = new Payment();
+         * payment.setFund(fund);
+         * payment.setUser(user);
+         * payment.setMonth(request.getMonth());
+         * payment.setAmount(fund.getMonthlyAmount());
+         * payment.setStatus("PAID");
+         * payment.setPaymentDate(LocalDate.now());
+         * 
+         * paymentRepository.save(payment);
+         * 
+         * return "Payment successful";
+         * }
+         */
 }

@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.fundapp.dto.ApiResponse;
 import com.fundapp.dto.EmiRequestDto;
 import com.fundapp.dto.IssueLoanRequest;
 import com.fundapp.entity.Fund;
@@ -49,21 +50,22 @@ public class LoanController {
     private LoanService loanService;
 
     @PostMapping("/issue")
-    public String issueLoan(@RequestBody IssueLoanRequest request) {
+    public ApiResponse<String> issueLoan(@RequestBody IssueLoanRequest request) {
 
         Fund fund = fundRepository.findById(request.getFundId())
                 .orElseThrow(() -> new RuntimeException("Fund not found"));
 
         User user = userRepository.findByPhone(request.getPhone())
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        if (user == null)
-            return "User not found";
 
         boolean isMember = fundMemberRepository.existsByFund_IdAndUser_Id(fund.getId(), user.getId());
 
         if (!isMember)
-            return "User is not a member of this fund";
-
+return new ApiResponse<>(
+        false,
+        "User is not a member of this fund",
+        null
+);
         BigDecimal interestAmount = request.getLoanAmount().multiply(request.getInterestPercent())
                 .divide(BigDecimal.valueOf(100));
 
@@ -87,11 +89,15 @@ public class LoanController {
 
         loanRepository.save(loan);
 
-        return "Loan issued successfully";
+        return new ApiResponse<>(
+        true,
+        "Loan issued successfully",
+        null
+);
     }
 
     @PostMapping("/emi/request")
-    public String requestEmi(@RequestBody EmiRequestDto request) {
+    public ApiResponse<String> requestEmi(@RequestBody EmiRequestDto request) {
         Loan loan = loanRepository.findById(request.getLoanId())
                 .orElseThrow(() -> new RuntimeException("Loan not found"));
 
@@ -101,18 +107,27 @@ public class LoanController {
 
         User user = userRepository.findByPhone(phone).orElseThrow(() -> new RuntimeException("User not found"));
         if (!loan.getUser().getId().equals(user.getId())) {
-            return "You cannot request EMI for another user's loan";
-        }
+return new ApiResponse<>(
+        false,
+        "You cannot request EMI for another user's loan",
+        null
+);        }
         // System.out.println("Loan EMI = " + loan.getMonthlyEmi());
 
         if (!loan.getStatus().equals("ACTIVE")) {
-            return "Loan is not active";
-
+return new ApiResponse<>(
+        false,
+        "Loan is not active",
+        null
+);
         }
         boolean exists = loanEmiRepository.existsByLoanIdAndMonth(loan.getId(), request.getMonth());
         if (exists) {
-            return "EMI already requested for this month";
-        }
+return new ApiResponse<>(
+        false,
+        "EMI already requested for this month",
+        null
+);        }
         LoanEmi emi = new LoanEmi();
         emi.setLoan(loan);
         emi.setMonth(request.getMonth());
@@ -122,11 +137,14 @@ public class LoanController {
 
         loanEmiRepository.save(emi);
 
-        return "EMI request submitted";
-    }
+return new ApiResponse<>(
+        true,
+        "EMI request submitted",
+        null
+);    }
 
     @PostMapping("/emi/approve/{emiId}")
-    public String approveEmi(@PathVariable("emiId") Long emiId) {
+    public ApiResponse<String> approveEmi(@PathVariable("emiId") Long emiId){
         return loanService.approveEmi(emiId);
     }
 }
