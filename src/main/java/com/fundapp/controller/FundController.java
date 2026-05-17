@@ -4,6 +4,8 @@ import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -67,8 +69,11 @@ public class FundController {
         Fund fund = fundRepository.findById(request.getFundId())
                 .orElseThrow(() -> new RuntimeException("Fund not found"));
 
-        User user = userRepository.findByPhone(request.getPhone())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+        String phone = auth.getName();
+
+        User user = userRepository.findByPhone(phone).orElseThrow(() -> new RuntimeException("User not found"));
         if (user == null) {
             return "User not registered";
         }

@@ -56,9 +56,13 @@ public class LoanController {
 
         Fund fund = fundRepository.findById(request.getFundId())
                 .orElseThrow(() -> new RuntimeException("Fund not found"));
+Authentication auth =
+        SecurityContextHolder.getContext().getAuthentication();
 
-        User user = userRepository.findByPhone(request.getPhone())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+String phone = auth.getName();
+
+User user = userRepository.findByPhone(phone)
+        .orElseThrow(() -> new RuntimeException("User not found"));
 
         boolean isMember = fundMemberRepository.existsByFund_IdAndUser_Id(fund.getId(), user.getId());
 
