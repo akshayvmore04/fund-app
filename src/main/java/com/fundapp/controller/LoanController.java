@@ -27,6 +27,8 @@ import com.fundapp.repository.LoanRepository;
 import com.fundapp.repository.UserRepository;
 import com.fundapp.service.LoanService;
 
+import jakarta.validation.Valid;
+
 @RestController
 @RequestMapping("/loan")
 public class LoanController {
@@ -50,7 +52,7 @@ public class LoanController {
     private LoanService loanService;
 
     @PostMapping("/issue")
-    public ApiResponse<String> issueLoan(@RequestBody IssueLoanRequest request) {
+    public ApiResponse<String> issueLoan(@Valid @RequestBody IssueLoanRequest request) {
 
         Fund fund = fundRepository.findById(request.getFundId())
                 .orElseThrow(() -> new RuntimeException("Fund not found"));
@@ -97,7 +99,7 @@ return new ApiResponse<>(
     }
 
     @PostMapping("/emi/request")
-    public ApiResponse<String> requestEmi(@RequestBody EmiRequestDto request) {
+    public ApiResponse<String> requestEmi(@Valid @RequestBody EmiRequestDto request) {
         Loan loan = loanRepository.findById(request.getLoanId())
                 .orElseThrow(() -> new RuntimeException("Loan not found"));
 

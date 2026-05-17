@@ -1,8 +1,12 @@
 package com.fundapp.dto;
 
-public class EmiRequestDto {
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
+public class EmiRequestDto {
+    @NotNull(message = "Loan ID is required")
     private Long loanId;
+    @NotBlank(message = "Month is required")
     private String month;
 
     public Long getLoanId() {
