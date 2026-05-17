@@ -5,6 +5,8 @@ import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.fundapp.dto.ApprovePaymentRequest;
 import com.fundapp.dto.DefaulterResponse;
 import com.fundapp.dto.FundDashboardResponse;
+import com.fundapp.dto.PaymentHistoryDto;
 import com.fundapp.dto.PaymentHistoryResponse;
 import com.fundapp.dto.PaymentRequest;
 import com.fundapp.dto.PendingPaymentResponse;
@@ -48,10 +51,12 @@ public class PaymentController {
         Fund fund = fundRepository.findById(request.getFundId())
                 .orElseThrow(() -> new RuntimeException("Fund not found"));
 
-        User user = userRepository.findByPhone(request.getPhone())
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+        String phone = auth.getName();
+
+        User user = userRepository.findByPhone(phone)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        if (user == null)
-            return "User not found";
 
         boolean isMember = fundMemberRepository
                 .existsByFund_IdAndUser_Id(fund.getId(), user.getId());
@@ -151,6 +156,31 @@ public class PaymentController {
 
         return new FundDashboardResponse(totalMembers, monthlyAmount, expected, collected, pending);
     }
+
+  @GetMapping("/my-history")
+public List<PaymentHistoryDto> myPaymentHistory() {
+
+    Authentication auth =
+            SecurityContextHolder.getContext().getAuthentication();
+
+    String phone = auth.getName();
+
+    User user = userRepository.findByPhone(phone)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+
+    List<Payment> payments =
+            paymentRepository.findByUserId(user.getId());
+
+    return payments.stream()
+            .map(payment -> new PaymentHistoryDto(
+                    payment.getMonth(),
+                    payment.getAmount(),
+                    payment.getStatus(),
+                    payment.getPaymentDate()
+            ))
+            .toList();
+}
+
     // OLD FLOW - direct pay (not used anymore)
     /*
      * @PostMapping("/pay")

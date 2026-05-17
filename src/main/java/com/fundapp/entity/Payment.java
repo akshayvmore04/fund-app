@@ -3,6 +3,8 @@ package com.fundapp.entity;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -25,10 +27,12 @@ public class Payment {
     private LocalDate paymentDate;
 
     @ManyToOne
+    @JsonIgnoreProperties({"payments"})
     @JoinColumn(name = "fund_id")
     private Fund fund;
 
     @ManyToOne
+    @JsonIgnoreProperties({"payments"})
     @JoinColumn(name = "user_id")
     private User user;
 

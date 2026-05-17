@@ -5,6 +5,8 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -93,6 +95,14 @@ public class LoanController {
         Loan loan = loanRepository.findById(request.getLoanId())
                 .orElseThrow(() -> new RuntimeException("Loan not found"));
 
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+        String phone = auth.getName();
+
+        User user = userRepository.findByPhone(phone).orElseThrow(() -> new RuntimeException("User not found"));
+        if (!loan.getUser().getId().equals(user.getId())) {
+            return "You cannot request EMI for another user's loan";
+        }
         // System.out.println("Loan EMI = " + loan.getMonthlyEmi());
 
         if (!loan.getStatus().equals("ACTIVE")) {
