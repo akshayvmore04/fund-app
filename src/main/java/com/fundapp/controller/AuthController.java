@@ -6,13 +6,18 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.fundapp.dto.ApiResponse;
 import com.fundapp.dto.LoginRequest;
+import com.fundapp.dto.UserProfileResponse;
 import com.fundapp.entity.User;
 import com.fundapp.repository.UserRepository;
 import com.fundapp.security.JwtUtil;
@@ -54,6 +59,18 @@ public class AuthController {
         String token = jwtUtil.generateToken(request.getPhone());
 
         return Map.of("token", token);
+    }
+
+    @GetMapping("/me")
+    public ApiResponse<UserProfileResponse> getCurrentUser() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+        String phone = auth.getName();
+        User user = userRepository.findByPhone(phone).orElseThrow(() -> new RuntimeException("User not found"));
+
+        UserProfileResponse response = new UserProfileResponse(user.getName(), user.getPhone(), user.getRole());
+
+        return new ApiResponse<UserProfileResponse>(true, "User profile fetched successfully", response);
     }
     // @PostMapping("/login")
     // public String login(@RequestBody LoginRequest request) {
