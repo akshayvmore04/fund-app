@@ -42,8 +42,9 @@ public class AuthController {
     public User register(@RequestBody User user) {
         System.out.println("NAME = " + user.getName());
         System.out.println("PHONE = " + user.getPhone());
+        System.out.println("RAW PASSWORD = " + user.getPassword());
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-        user.setRole("MEMBER");
+        user.setRole("USER");
         user.setCreatedAt(LocalDateTime.now());
         return userRepository.save(user);
     }

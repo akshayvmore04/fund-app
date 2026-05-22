@@ -1,12 +1,14 @@
 package com.fundapp.entity;
+
 import java.time.LocalDateTime;
 
-import jakarta.persistence.Id;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 @Entity
@@ -19,6 +21,9 @@ public class User {
 
     private String name;
     private String phone;
+
+    @JsonIgnoreProperties(value = { "password" }, allowSetters = true)
+    @Column(length = 100)
     private String password;
     
     @Column(nullable = false)
@@ -28,7 +33,8 @@ public class User {
     private LocalDateTime createdAt;
 
     // REQUIRED: No-arg constructor
-    public User() {}
+    public User() {
+    }
 
     // Getters & Setters
     public Long getId() {

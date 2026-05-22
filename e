@@ -1,0 +1,157 @@
+[33mcommit 4bd470cb4a876cde054c9d9f9b168baec0f6569d[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m
+Author: akshayvmore04 <akshayvmore2003@gmail.com>
+Date:   Sun May 17 17:43:47 2026 +0530
+
+    Refactor authenticated APIs to use JWT-based user identity
+
+[33mcommit 6989ec1c0c40132e0de47c642848b0e9f9e47d04[m
+Author: akshayvmore04 <akshayvmore2003@gmail.com>
+Date:   Sun May 17 17:20:09 2026 +0530
+
+    Add centralized handling for validation exceptions
+
+[33mcommit a20de38147de3a36c444262667b6786e8320359a[m
+Author: akshayvmore04 <akshayvmore2003@gmail.com>
+Date:   Sun May 17 17:10:59 2026 +0530
+
+    Add request validation using Jakarta Bean Validation
+
+[33mcommit 9dfb8b068b6edcafb596b4f83a132257054adff9[m
+Author: akshayvmore04 <akshayvmore2003@gmail.com>
+Date:   Sun May 17 16:54:56 2026 +0530
+
+    Standardize API responses using generic response wrapper
+
+[33mcommit 7f83b1a7b3834dc6bd824e1bda03417e63d22887[m
+Author: akshayvmore04 <akshayvmore2003@gmail.com>
+Date:   Sun May 17 16:16:27 2026 +0530
+
+    Refactor APIs to use JWT-authenticated user context and DTO responses
+
+[33mcommit 782042b37528e6e8785f81395cf102a28bd8b341[m
+Author: Akshay More <akshayvmore2003@gmail.com>
+Date:   Wed Apr 15 15:28:50 2026 +0530
+
+    Add README for Fund Management System backend
+    
+    Added detailed documentation for the Fund Management System backend, including features, architecture, setup instructions, and future improvements.
+
+[33mcommit d8d4698823e25eceb6ba83918402f533e66a3cf9[m
+Author: akshayvmore04 <akshayvmore2003@gmail.com>
+Date:   Tue Mar 10 18:07:07 2026 +0530
+
+    Implement JWT-based authentication and API security
+
+[33mcommit 4dbc2defa852eac3b4c7e50999669d099f767085[m
+Author: akshayvmore04 <akshayvmore2003@gmail.com>
+Date:   Wed Mar 4 02:04:21 2026 +0530
+
+    Implement database authentication and role-based access control
+
+[33mcommit 4a80527d866159269720588f943619bfcdbdf76a[m
+Author: akshayvmore04 <akshayvmore2003@gmail.com>
+Date:   Sat Feb 21 22:34:57 2026 +0530
+
+    Add global exception handling for structured API errors
+
+[33mcommit ab407cbf154c1a90430a08f2821a1c33e9a164ec[m
+Author: akshayvmore04 <akshayvmore2003@gmail.com>
+Date:   Sat Feb 21 22:08:23 2026 +0530
+
+    Refactor loan module to introduce service layer
+
+[33mcommit 72636722bd509fa7f0bc8ce860f5e5782b5760a6[m
+Author: akshayvmore04 <akshayvmore2003@gmail.com>
+Date:   Wed Feb 11 22:43:28 2026 +0530
+
+    Implement EMI approval and loan closure logic
+
+[33mcommit 53a6ca24040b61380a9c95abc320be3ce1759625[m
+Author: akshayvmore04 <akshayvmore2003@gmail.com>
+Date:   Wed Feb 11 16:47:14 2026 +0530
+
+    Implement EMI request API and repository
+
+[33mcommit 33bb64442a6926418632198833f50dc29919534b[m
+Author: akshayvmore04 <akshayvmore2003@gmail.com>
+Date:   Wed Feb 11 16:07:43 2026 +0530
+
+    Add loan EMI entity
+
+[33mcommit df430da28112728837b841e1429c833faaa82627[m
+Author: akshayvmore04 <akshayvmore2003@gmail.com>
+Date:   Wed Feb 11 15:35:09 2026 +0530
+
+    Implement loan issuing API
+
+[33mcommit d19e5a681b8d2fd596a95cf7cc712ec3cda588a7[m
+Author: akshayvmore04 <akshayvmore2003@gmail.com>
+Date:   Wed Feb 11 14:33:50 2026 +0530
+
+    Enhance loan entity with interest and repayment fields
+
+[33mcommit fdef90855b56950710e52bcc3931f025b7fd2363[m
+Author: akshayvmore04 <akshayvmore2003@gmail.com>
+Date:   Tue Feb 10 22:51:55 2026 +0530
+
+    Add fund dashboard summary API
+
+[33mcommit 28d8a1d783022f0b1e7009f8124fc49e7b3ca6d0[m
+Author: akshayvmore04 <akshayvmore2003@gmail.com>
+Date:   Tue Feb 10 19:38:30 2026 +0530
+
+    Add payment history API
+
+[33mcommit 2782e77fa74a1d589186844833fef1ece230c47c[m
+Author: akshayvmore04 <akshayvmore2003@gmail.com>
+Date:   Sun Feb 8 21:55:31 2026 +0530
+
+    Implement pending payments and defaulters APIs
+
+[33mcommit fd4db9e6a87ccf865a6c8f37e0f928a276c09a17[m
+Author: akshayvmore04 <akshayvmore2003@gmail.com>
+Date:   Sun Feb 8 15:54:18 2026 +0530
+
+    Add payment APIs with request and approval DTOs
+
+[33mcommit 7bc0a6c21aeb179ff35835b83b2feeff69ab8a94[m
+Author: akshayvmore04 <akshayvmore2003@gmail.com>
+Date:   Thu Feb 5 16:50:34 2026 +0530
+
+    Add fund and member response DTOs
+
+[33mcommit 66ecb1957a55c1c7c79be9765c9c178ebcc22be2[m
+Author: akshayvmore04 <akshayvmore2003@gmail.com>
+Date:   Thu Feb 5 16:21:44 2026 +0530
+
+    Add member to fund API and request DTO
+
+[33mcommit ba295a09cc7d607cf4d30f6652daffde01a8d754[m
+Author: akshayvmore04 <akshayvmore2003@gmail.com>
+Date:   Thu Feb 5 13:45:08 2026 +0530
+
+    Add fund controller and DTOs, update auth controller
+
+[33mcommit d7c7e8a9a1ab06eea536c91a6a284b68ab8259db[m
+Author: akshayvmore04 <akshayvmore2003@gmail.com>
+Date:   Sun Feb 1 17:54:31 2026 +0530
+
+    Implement user registration API and add JPA repositories
+
+[33mcommit 3ef9bb55db798bba0e15e34ebdc1381633c6ac85[m
+Author: akshayvmore04 <akshayvmore2003@gmail.com>
+Date:   Thu Jan 29 23:47:39 2026 +0530
+
+    Add example application properties file
+
+[33mcommit 6ffa6ff6479a241d91f654c2bb36d55d389a38a9[m
+Author: akshayvmore04 <akshayvmore2003@gmail.com>
+Date:   Thu Jan 29 23:44:31 2026 +0530
+
+    Remove application.properties from version control
+
+[33mcommit e0ef53f02aae23b7c0edef60aae087050a49c4b3[m
+Author: akshayvmore04 <akshayvmore2003@gmail.com>
+Date:   Thu Jan 29 23:28:43 2026 +0530
+
+    Initial project setup with JPA, database configuration, and core entities

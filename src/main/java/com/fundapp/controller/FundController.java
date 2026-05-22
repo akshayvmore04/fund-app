@@ -14,14 +14,18 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fundapp.dto.AddMemberRequest;
+import com.fundapp.dto.ApiResponse;
 import com.fundapp.dto.CreateFundRequest;
 import com.fundapp.dto.FundDetailsResponse;
+import com.fundapp.dto.JoinRequestResponse;
 import com.fundapp.dto.MemberResponse;
 import com.fundapp.entity.Fund;
 import com.fundapp.entity.FundMember;
+import com.fundapp.entity.JoinRequest;
 import com.fundapp.entity.User;
 import com.fundapp.repository.FundMemberRepository;
 import com.fundapp.repository.FundRepository;
+import com.fundapp.repository.JoinRequestRepository;
 import com.fundapp.repository.UserRepository;
 
 @RestController
@@ -36,6 +40,9 @@ public class FundController {
 
     @Autowired
     private FundMemberRepository fundMemberRepository;
+
+    @Autowired
+    private JoinRequestRepository joinRequestRepository;
 
     @PostMapping("/create")
     public Fund createFund(@RequestBody CreateFundRequest request) {
@@ -98,6 +105,60 @@ public class FundController {
 
     }
 
+    @PostMapping("/request-join/{fundId}")
+    public String requestJoin(@PathVariable Long fundId) {
+
+        Fund fund = fundRepository.findById(fundId)
+                .orElseThrow(() -> new RuntimeException("Fund not found"));
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+        String phone = auth.getName();
+
+        User user = userRepository.findByPhone(phone)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // already member check
+
+        boolean alreadyMember = fundMemberRepository.existsByFund_IdAndUser_Id(
+                fund.getId(),
+                user.getId());
+
+        if (alreadyMember) {
+
+            return "You are already a member";
+
+        }
+
+        // duplicate request check
+
+        boolean requestExists = joinRequestRepository
+                .existsByFundIdAndUserIdAndStatus(
+                        fund.getId(),
+                        user.getId(),
+                        "PENDING");
+
+        if (requestExists) {
+
+            return "Join request already pending";
+
+        }
+
+        JoinRequest joinRequest = new JoinRequest();
+
+        joinRequest.setFund(fund);
+
+        joinRequest.setUser(user);
+
+        joinRequest.setStatus("PENDING");
+
+        joinRequest.setRequestDate(LocalDate.now());
+
+        joinRequestRepository.save(joinRequest);
+
+        return "Join request submitted successfully";
+    }
+
     @GetMapping("/{fundId}")
     public FundDetailsResponse getFundDetails(@PathVariable Long fundId) {
         Fund fund = fundRepository.findById(fundId).orElseThrow(() -> new RuntimeException("Fund not found"));
@@ -117,5 +178,48 @@ public class FundController {
                 fund.getAdmin().getName(),
                 fund.getAdmin().getPhone(),
                 members);
+    }
+
+    @GetMapping("/all")
+    public List<Fund> getAllFunds() {
+
+        return fundRepository.findAll();
+    }
+
+    @GetMapping("/join-requests")
+    public List<JoinRequestResponse> getPendingRequests() {
+
+        List<JoinRequest> requests = joinRequestRepository.findByStatus("PENDING");
+
+        return requests.stream()
+                .map(r -> new JoinRequestResponse(
+                        r.getId(),
+                        r.getUser().getName(),
+                        r.getUser().getPhone(),
+                        r.getFund().getName()))
+                .toList();
+    }
+
+    @PostMapping("/approve-request/{requestId}")
+    public ApiResponse<String> approveRequest(@PathVariable Long requestId) {
+        JoinRequest request = joinRequestRepository.findById(requestId)
+                .orElseThrow(() -> new RuntimeException("Request not found"));
+        if (!request.getStatus().equals("PENDING")) {
+            return new ApiResponse<String>(false, "Request already processed", null);
+        }
+        FundMember member = new FundMember();
+        member.setFund(request.getFund());
+        member.setUser(request.getUser());
+        member.setRole("MEMBER");
+        member.setJoinDate(LocalDate.now());
+        fundMemberRepository.save(member);
+        Fund fund = request.getFund();
+        fund.setTotalMembers(fund.getTotalMembers() + 1);
+        fundRepository.save(fund);
+        request.setStatus("APPROVED");
+        joinRequestRepository.save(request);
+
+        return new ApiResponse<String>(true, "Request approved successfully", null);
+
     }
 }
