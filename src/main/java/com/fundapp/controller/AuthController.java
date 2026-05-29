@@ -50,7 +50,24 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public Map<String, String> login(@RequestBody LoginRequest request) {
+    public Map<String, String> login(
+            @RequestBody LoginRequest request) {
+
+        System.out.println("LOGIN PHONE = " + request.getPhone());
+
+        System.out.println("LOGIN PASSWORD = " + request.getPassword());
+
+        User user = userRepository
+                .findByPhone(request.getPhone())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        System.out.println("DB PASSWORD = " + user.getPassword());
+
+        boolean matches = passwordEncoder.matches(
+                request.getPassword(),
+                user.getPassword());
+
+        System.out.println("PASSWORD MATCH = " + matches);
 
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
@@ -64,14 +81,30 @@ public class AuthController {
 
     @GetMapping("/me")
     public ApiResponse<UserProfileResponse> getCurrentUser() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+        Authentication auth = SecurityContextHolder
+                .getContext()
+                .getAuthentication();
+
+        System.out.println("AUTH = " + auth);
 
         String phone = auth.getName();
-        User user = userRepository.findByPhone(phone).orElseThrow(() -> new RuntimeException("User not found"));
 
-        UserProfileResponse response = new UserProfileResponse(user.getName(), user.getPhone(), user.getRole());
+        System.out.println("PHONE = " + phone);
 
-        return new ApiResponse<UserProfileResponse>(true, "User profile fetched successfully", response);
+        User user = userRepository
+                .findByPhone(phone)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        UserProfileResponse response = new UserProfileResponse(
+                user.getName(),
+                user.getPhone(),
+                user.getRole());
+
+        return new ApiResponse<>(
+                true,
+                "User profile fetched successfully",
+                response);
     }
     // @PostMapping("/login")
     // public String login(@RequestBody LoginRequest request) {

@@ -202,8 +202,10 @@ public class FundController {
 
     @PostMapping("/approve-request/{requestId}")
     public ApiResponse<String> approveRequest(@PathVariable Long requestId) {
+
         JoinRequest request = joinRequestRepository.findById(requestId)
                 .orElseThrow(() -> new RuntimeException("Request not found"));
+
         if (!request.getStatus().equals("PENDING")) {
             return new ApiResponse<String>(false, "Request already processed", null);
         }
@@ -212,11 +214,16 @@ public class FundController {
         member.setUser(request.getUser());
         member.setRole("MEMBER");
         member.setJoinDate(LocalDate.now());
+
         fundMemberRepository.save(member);
+
         Fund fund = request.getFund();
         fund.setTotalMembers(fund.getTotalMembers() + 1);
+
         fundRepository.save(fund);
+
         request.setStatus("APPROVED");
+
         joinRequestRepository.save(request);
 
         return new ApiResponse<String>(true, "Request approved successfully", null);
